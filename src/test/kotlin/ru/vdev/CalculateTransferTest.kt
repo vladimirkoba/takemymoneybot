@@ -86,17 +86,19 @@ class CalculateTransferTest {
 
     @Test
     fun rukaTest() {
-        val antonanya = Man("Anton and Anya", Money(253, Currency.RUB))
+        val anton = Man("Anton", Money(253, Currency.RUB))
+        val anya = Man(" Anya", Money(0, Currency.RUB))
         val boris = Man("Boris", Money(170, Currency.RUB))
         val pavel = Man("Pavel", Money(57, Currency.RUB))
         val yulia = Man("Yulia", Money(0, Currency.RUB))
         val vova = Man("Vova", Money(188, Currency.RUB))
         val man = listOf(
-                antonanya,
+                anton,
                 boris,
                 pavel,
                 yulia,
-                vova
+                vova,
+                anya
         )
         val expectedTransfers = listOf(
                 Transfer(boris.name, pavel.name, Money(1500, Currency.RUB)),

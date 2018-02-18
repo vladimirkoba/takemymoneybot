@@ -39,7 +39,7 @@ data class Transfer(
 
 ) {
     override fun toString(): String {
-        return "$from -> $to : ${amount.cents}${amount.currency} "
+        return "$from -> $to : ${amount.cents}${amount.currency} \n"
     }
 }
 
@@ -50,7 +50,7 @@ enum class Currency {
 
 class TransferCalculator(val man: List<Man>) {
     fun calculete(): List<Transfer> {
-        val eps = man.size
+        val eps = man.size-1
         var (debtors, creditors) = man
                 .map { Man(it.name, Money(it.wasted.cents - averageWasted(), it.wasted.currency)) }
                 .filter { it.wasted.cents != 0 }
@@ -64,7 +64,7 @@ class TransferCalculator(val man: List<Man>) {
                 val sumOfTransferCents = calculateSumOfTransfer(cred, debt)
                 transfers.add(Transfer(debt.name, cred.name, Money(sumOfTransferCents)))
 
-                debt = Man(debtor.name, Money(debtor.wasted.cents + sumOfTransferCents))
+                debt = Man(debtor.name, Money(debt.wasted.cents + sumOfTransferCents))
                 cred = Man(cred.name, Money(cred.wasted.cents - sumOfTransferCents))
                 creditors = creditors.map { if (it.name == cred.name) cred else it } .filter { it.wasted.cents > eps }
             }
