@@ -32,11 +32,16 @@ data class Money(
     }
 }
 
-data class Transfer (
+data class Transfer(
         val from: String,
         val to: String,
         val amount: Money
-)
+
+) {
+    override fun toString(): String {
+        return "$from -> $to : ${amount.cents}${amount.currency} "
+    }
+}
 
 enum class Currency {
     RUB, USD, EUR
@@ -45,17 +50,54 @@ enum class Currency {
 
 class TransferCalculator(val man: List<Man>) {
     fun calculete(): List<Transfer> {
-        val (debtors, creditors) = man
+        val eps = man.size
+        var (debtors, creditors) = man
                 .map { Man(it.name, Money(it.wasted.cents - averageWasted(), it.wasted.currency)) }
                 .filter { it.wasted.cents != 0 }
                 .partition { it.wasted.cents < 0 }
         val transfers = mutableListOf<Transfer>()
         for (debtor in debtors) {
-            val creditorForTransfer = creditors.minBy { (it.wasted + debtor.wasted).cents >= 0 }
-                    ?: throw IllegalArgumentException("Incorrect input!")
-            transfers.add(Transfer(debtor.name, creditorForTransfer.name, Money(abs(debtor.wasted.cents))))
+            var debt = debtor
+            while (abs(debt.wasted.cents) >= eps) {
+                var cred = findCreditorForTransfer(creditors, debtor, eps)
+
+                val sumOfTransferCents = calculateSumOfTransfer(cred, debt)
+                transfers.add(Transfer(debt.name, cred.name, Money(sumOfTransferCents)))
+
+                debt = Man(debtor.name, Money(debtor.wasted.cents + sumOfTransferCents))
+                cred = Man(cred.name, Money(cred.wasted.cents - sumOfTransferCents))
+                creditors = creditors.map { if (it.name == cred.name) cred else it } .filter { it.wasted.cents > eps }
+            }
         }
         return transfers
+    }
+
+    private fun calculateSumOfTransfer(cred: Man, debt: Man): Int {
+        return if (abs(cred.wasted.cents) >= abs(debt.wasted.cents)) {
+            abs(debt.wasted.cents)
+        } else {
+            abs(cred.wasted.cents)
+        }
+    }
+
+    private fun findCreditorForTransfer(creditors: List<Man>, debtor: Man, eps: Int): Man {
+        var creditorForTransfer = findDirectCreditor(creditors, debtor, eps)
+        if (creditorForTransfer == null) {
+            creditorForTransfer = findCreditorWithMoreCreditThanDebt(creditors, debtor)
+        }
+        if (creditorForTransfer == null) {
+            creditorForTransfer = creditors.find { it.wasted.cents < debtor.wasted.cents } ?: throw IllegalArgumentException("WTF")
+        }
+        return creditorForTransfer
+    }
+
+    private fun findCreditorWithMoreCreditThanDebt(creditors: List<Man>, debtor: Man) =
+            creditors.find { it.wasted.cents > debtor.wasted.cents }
+
+    private fun findDirectCreditor(creditors: List<Man>, debtor: Man, eps: Int): Man? {
+        return creditors.minBy {
+            (it.wasted + debtor.wasted).cents >= eps
+        }
     }
 
     private fun findCreditorWithSameCredit(debtor: Man, creditors: List<Man>): Man? {
