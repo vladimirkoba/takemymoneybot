@@ -8,10 +8,7 @@ fun main(args: Array<String>) {
 }
 
 
-data class Man(
-        val name: String,
-        val wasted: Money
-)
+
 
 data class Money(
         val cents: Int,
